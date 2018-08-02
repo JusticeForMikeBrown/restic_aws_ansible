@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# backup script for restic
+
+LOGDIR='{{ logdir }}'
+LOG=${LOGDIR}/backup
+ERRLOG=${LOGDIR}/error
+DATE=$(date +%Y-%m-%d)
+HOSTNAME=$(hostname)
+EXCLUDE="/home/restic/exclude"
+EMAIL="{{ email }}"
+
+echo "restic backup started at $DATE" >> $LOG
+
+restic --exclude-file=${EXCLUDE} backup / 2>> $ERRLOG 1>> $LOG
+
+
+if [ $? -eq 0 ]
+  then
+     echo -e "restic backup completed at $DATE \n" >> $LOG
+     logger "Restic backup completed at $DATE"
+     curl -X POST \
+     --data-urlencode 'payload={"text": "'$HOSTNAME' restic backups completed at '$DATE'", "channel": "{{ chan }}"}' \
+     https://hooks.slack.com/services/{{ slack_token }}
+  else
+     logger "Restic backup issues at $DATE." && mail -s "Restic backup failed for $HOSTNAME at $DATE" $EMAIL < $ERRLOG
+     curl -X POST \
+     --data-urlencode 'payload={"text": "'$HOSTNAME' restic backups FAILED at '$DATE'", "channel": "{{ chan}}"}' \
+     https://hooks.slack.com/services/{{ slack_token }}
+fi

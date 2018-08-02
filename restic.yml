@@ -1,0 +1,5 @@
+---
+- hosts: "{{ hosts }}"
+  roles: 
+    - restic
+  gather_facts: True

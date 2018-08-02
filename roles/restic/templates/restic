@@ -1,0 +1,4 @@
+Defaults    env_keep += "RESTIC_REPOSITORY AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY RESTIC_PASSWORD"
+
+# needed to run restic restore - otherwise cannot preserve existing file permissions
+restic ALL        = (root) NOPASSWD: /usr/bin/restic *

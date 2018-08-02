@@ -1,0 +1,17 @@
+{{ logdir }}/backup {
+    copytruncate
+    monthly
+    rotate 365
+    compress
+    missingok
+    create 0644 restic restic
+}
+
+{{ logdir }}/error {
+    copytruncate
+    monthly
+    rotate 365
+    compress
+    missingok
+    create 0644 restic restic
+}

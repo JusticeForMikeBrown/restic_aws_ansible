@@ -1,0 +1,98 @@
+
+- name: ensure boto present on local mgmt server
+  tags: pip
+  pip: name=boto3,botocore state=present
+  delegate_to: localhost
+
+- name: create bucket for server backups in S3
+  aws_s3: bucket={{ bucket }} object={{ inventory_hostname }} mode=create
+      aws_access_key={{ aws_access_key }} aws_secret_key={{ aws_secret_key }}
+  delegate_to: localhost
+
+- name: add restic group
+  group: name={{ user }} gid={{ gid }} state=present
+
+- name: add restic user
+  user: name={{ user }} uid={{ uid }} group={{ user }} state=present home=/home/restic
+
+- name: add repo for restic | el6
+  shell: yum-config-manager --add-repo {{ el6_repo }}
+  when: ansible_distribution_major_version == '6'
+
+- name: add repo for restic | el7
+  shell: yum-config-manager --add-repo {{ el7_repo }}
+  when: ansible_distribution_major_version == '7'
+ 
+- name: install restic
+  yum: name=restic state=present update_cache=yes
+
+- name: deploy restic user bash profile
+  template: src=bash_profile dest=/home/restic/.bash_profile owner=restic group=restic mode=0640
+
+- name: set restic binary permissions
+  file: name=/usr/bin/restic owner=root group=restic mode=0750
+
+- name: setcap binary permissions
+  shell: setcap cap_dac_read_search=+ep /usr/bin/restic
+
+- name: create restic log directory
+  tags: script
+  file: name={{ logdir }} state=directory owner=restic group=restic
+
+- name: create restic log files
+  tags: script
+  file: name=/var/log/restic/{{ item }} state=touch owner=restic group=restic
+  with_items: "{{ logfiles }}"
+
+- name: template sudo
+  tags: sudo
+  template: src=restic dest="/tmp-{{ inventory_hostname }}-restic" mode=0644
+  delegate_to: localhost
+
+- name: deploy restic sudo file
+  tags: sudo
+  copy: src="/tmp-{{ inventory_hostname }}-restic" dest=/etc/sudoers.d/restic owner=root group=root mode=0440 validate='visudo -cf %s'
+ 
+- name: check if restic repo already initalized
+  tags: init
+  shell: restic list snapshots
+  register: restic_list
+  failed_when: "{{ restic_list.rc == 1234 }}"
+
+- name: initalize restic repo
+  tags: init
+  shell: "sudo su - restic -c 'restic init'"
+  when: "{{ restic_list.stdout.find('Fatal') == -1 }}"
+
+
+- name: template restic exclude file
+  tags: script
+  template: src=exclude dest=/home/restic/exclude owner=restic group=restic
+
+- name: template restic backup script
+  tags: script
+  template: src=run_restic dest=/usr/local/sbin/run_restic owner=restic group=restic mode=0740
+
+- name: cron for backups
+  tags: cron
+  cron: name="restic" hour="2" minute="0" user="restic"
+        job="bash -l /usr/local/sbin/run_restic"
+
+- name: logrotate
+  tags: logs
+  copy: src=logrotate_restic
+        dest=/etc/logrotate.d/restic
+        owner=root group=root mode=0644
+
+- name: run initial backup
+  shell: "sudo su - restic -c 'bash /usr/local/sbin/run_restic &'"
+
+- name: slack notification
+  slack: token={{ slack_token }} channel=#ansible msg='{{ ansible_env.SUDO_USER }} ran restic (backups) role on {{ inventory_hostname }}' color=good
+         icon_url=http://media.linkonlineworld.com/img/Large/2014/11/9/2014_11_9_10_22_13_286.jpg
+  when: ansible_env.SUDO_USER is defined
+
+- name: slack notification
+  slack: token={{ slack_token }} channel=#ansible msg='{{ ansible_env.USER }} ran restic (backups) role on {{ inventory_hostname }}' color=good
+         icon_url=http://media.linkonlineworld.com/img/Large/2014/11/9/2014_11_9_10_22_13_286.jpg
+  when: ansible_env.USER == 'root' and ansible_env.SUDO_USER is not defined

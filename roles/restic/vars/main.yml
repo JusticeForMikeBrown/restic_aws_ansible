@@ -1,0 +1,37 @@
+
+# place we get restic
+repo_url: 'https://copr.fedorainfracloud.org/coprs/copart/restic/repo/'
+el6_repo: '{{ repo_url}}epel-6/copart-restic-epel-6.repo'
+el7_repo: '{{ repo_url}}epel-7/copart-restic-epel-7.repo'
+
+# vars for restic s3
+bucket: "teh_bucket"
+aws_access_key: "swordfish"
+aws_secret_key: "password123"
+
+# password used to access restic repos in s3
+restic_password: "asdfqwerty"
+
+# logdir for restic
+logdir: '/var/log/restic'
+
+# logfiles for restic
+logfiles:
+ - backup
+ - error
+
+# user / group to run restic
+user: 'restic'
+
+# uid and gid for restic user
+uid: '666'
+gid: '666'
+
+# slack vars
+slack_token: 'token'
+
+# slack channel - used in 'run_restic'
+chan: '#backups'
+
+# email for failed backups - used in 'run_restic'
+email: 'sysadmin@dev.null'

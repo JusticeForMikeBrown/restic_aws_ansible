@@ -1,0 +1,3 @@
+{% for item in restic_exclude %}
+{{ item }}
+{% endfor %}

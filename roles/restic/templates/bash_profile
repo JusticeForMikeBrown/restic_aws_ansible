@@ -1,0 +1,17 @@
+# .bash_profile
+
+# Get the aliases and functions
+if [ -f ~/.bashrc ]; then
+	. ~/.bashrc
+fi
+
+# User specific environment and startup programs
+
+PATH=$PATH:$HOME/bin
+
+export PATH
+
+export RESTIC_REPOSITORY="s3:https://s3.amazonaws.com/{{ bucket }}/{{ inventory_hostname }}"
+export AWS_ACCESS_KEY_ID="{{ aws_access_key }}"
+export AWS_SECRET_ACCESS_KEY="{{ aws_secret_key }}"
+export RESTIC_PASSWORD="{{ restic_password }}"
