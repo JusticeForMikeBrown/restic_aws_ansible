@@ -42,8 +42,6 @@ restic_exclude:
 - /cgroup
 - /tmp
 - /var/tmp
-- /softlib
-- /pbtech_mounts
 - /media
 - /lost+found
 - /srv
