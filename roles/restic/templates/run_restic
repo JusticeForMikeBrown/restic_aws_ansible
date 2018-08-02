@@ -7,7 +7,7 @@ LOG=${LOGDIR}/backup
 ERRLOG=${LOGDIR}/error
 DATE=$(date +%Y-%m-%d)
 HOSTNAME=$(hostname)
-EXCLUDE="/home/restic/exclude"
+EXCLUDE="/home/{{ user }}/exclude"
 EMAIL="{{ email }}"
 
 echo "restic backup started at $DATE" >> $LOG

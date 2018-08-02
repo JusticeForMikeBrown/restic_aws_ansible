@@ -27,21 +27,21 @@
   yum: name=restic state=present update_cache=yes
 
 - name: deploy restic user bash profile
-  template: src=bash_profile dest=/home/restic/.bash_profile owner=restic group=restic mode=0640
+  template: src=bash_profile dest=/home/{{ user }}/.bash_profile owner=restic group=restic mode=0640
 
 - name: set restic binary permissions
-  file: name=/usr/bin/restic owner=root group=restic mode=0750
+  file: name=/usr/bin/restic owner=root group={{ user }} mode=0750
 
 - name: setcap binary permissions
   shell: setcap cap_dac_read_search=+ep /usr/bin/restic
 
 - name: create restic log directory
   tags: script
-  file: name={{ logdir }} state=directory owner=restic group=restic
+  file: name={{ logdir }} state=directory owner={{ user }} group={{ user }}
 
 - name: create restic log files
   tags: script
-  file: name=/var/log/restic/{{ item }} state=touch owner=restic group=restic
+  file: name={{ logdir}}/{{ item }} state=touch owner={{ user }} group={{ user }}
   with_items: "{{ logfiles }}"
 
 - name: template sudo
@@ -61,21 +61,21 @@
 
 - name: initalize restic repo
   tags: init
-  shell: "sudo su - restic -c 'restic init'"
+  shell: "sudo su - {{ user }} -c 'restic init'"
   when: "{{ restic_list.stdout.find('Fatal') == -1 }}"
 
 
 - name: template restic exclude file
   tags: script
-  template: src=exclude dest=/home/restic/exclude owner=restic group=restic
+  template: src=exclude dest=/home/{{ user }}/exclude owner={{ user }} group={{ user }}
 
 - name: template restic backup script
   tags: script
-  template: src=run_restic dest=/usr/local/sbin/run_restic owner=restic group=restic mode=0740
+  template: src=run_restic dest=/usr/local/sbin/run_restic owner={{ user }} group={{ user }} mode=0740
 
 - name: cron for backups
   tags: cron
-  cron: name="restic" hour="2" minute="0" user="restic"
+  cron: name="restic" hour="2" minute="0" user="{{ user }}"
         job="bash -l /usr/local/sbin/run_restic"
 
 - name: logrotate
@@ -85,7 +85,7 @@
         owner=root group=root mode=0644
 
 - name: run initial backup
-  shell: "sudo su - restic -c 'bash /usr/local/sbin/run_restic &'"
+  shell: "sudo su - {{ user }} -c 'bash /usr/local/sbin/run_restic &'"
 
 - name: slack notification
   slack: token={{ slack_token }} channel=#ansible msg='{{ ansible_env.SUDO_USER }} ran restic (backups) role on {{ inventory_hostname }}' color=good
