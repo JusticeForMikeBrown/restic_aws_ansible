@@ -15,6 +15,8 @@ You need a Slack server
 
 CentOS 6 or 7
 
+AWS S3 Account
+
 Examples
 --------
 
