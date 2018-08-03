@@ -13,7 +13,7 @@
   group: name={{ user }} gid={{ gid }} state=present
 
 - name: add restic user
-  user: name={{ user }} uid={{ uid }} group={{ user }} state=present home=/home/restic
+  user: name={{ user }} uid={{ uid }} group={{ user }} state=present home=/home/{{ user }}
 
 - name: add repo for restic | el6
   shell: yum-config-manager --add-repo {{ el6_repo }}
@@ -27,7 +27,7 @@
   yum: name=restic state=present update_cache=yes
 
 - name: deploy restic user bash profile
-  template: src=bash_profile dest=/home/{{ user }}/.bash_profile owner=restic group=restic mode=0640
+  template: src=bash_profile dest=/home/{{ user }}/.bash_profile owner={{ user }} group={{ user }} mode=0640
 
 - name: set restic binary permissions
   file: name=/usr/bin/restic owner=root group={{ user }} mode=0750
@@ -59,10 +59,10 @@
   register: restic_list
   failed_when: "{{ restic_list.rc == 1234 }}"
 
-- name: initalize restic repo
+- name: initalize restic repo when never done before
   tags: init
   shell: "sudo su - {{ user }} -c 'restic init'"
-  when: "{{ restic_list.stdout.find('Fatal') == -1 }}"
+  when: "{{ restic_list.stdout.find('Fatal') != -1 }}"
 
 
 - name: template restic exclude file
