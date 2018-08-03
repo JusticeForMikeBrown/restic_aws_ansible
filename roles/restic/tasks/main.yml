@@ -62,7 +62,7 @@
 - name: initalize restic repo when never done before
   tags: init
   shell: "sudo su - {{ user }} -c 'restic init'"
-  when: "{{ restic_list.stdout.find('Fatal') != -1 }}"
+  when: "{{ restic_list.stderr.find('Fatal') != -1 }}"
 
 
 - name: template restic exclude file
