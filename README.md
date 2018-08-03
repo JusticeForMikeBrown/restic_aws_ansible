@@ -4,7 +4,9 @@ Deploy Restic Backups in S3 using Ansible
 
 This role will deploy Restic backup client in S3 using Ansible
 
-Message that role ran will be sent to Slack as will status of backups.  Failure will also be sent via email
+Message that role ran will be sent to Slack as will status of backups.
+
+Failure will also be sent via email
 
 Requirements
 ------------
